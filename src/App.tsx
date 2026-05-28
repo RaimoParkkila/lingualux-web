@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { getAllQuiz, createRow } from "./services/quiz"
+import { getAllQuiz, createRow, updateRow, deleteRow } from "./services/quiz"
 import { supabase } from "./services/supabase"
 
 type Row = {
@@ -29,11 +29,14 @@ export default function App() {
   const [d, setD] = useState("")
   const [answer, setAnswer] = useState("")
 
+  const [editingId, setEditingId] = useState<number | null>(null)
+
   const [quizIndex, setQuizIndex] = useState(0)
   const [selected, setSelected] = useState<string | null>(null)
   const [score, setScore] = useState(0)
 
   const current = rows[quizIndex]
+
   const isAdmin = user?.email === "raimopa2@gmail.com"
 
   /* ---------------- AUTH ---------------- */
@@ -76,10 +79,7 @@ export default function App() {
       password,
     })
 
-    if (error) {
-      alert(error.message)
-      return
-    }
+    if (error) return alert(error.message)
 
     const { data } = await supabase.auth.getUser()
     setUser(data.user)
@@ -91,13 +91,32 @@ export default function App() {
     setMode("quiz")
   }
 
-  /* ---------------- ADD ---------------- */
-  async function add() {
+  /* ---------------- SAVE (ADD / EDIT) ---------------- */
+  async function save() {
     if (!isAdmin) return
     if (!question || !a || !b || !c || !d || !answer) return
 
-    await createRow({ question, a, b, c, d, answer })
+    if (editingId) {
+      await updateRow(editingId, {
+        question,
+        a,
+        b,
+        c,
+        d,
+        answer,
+      })
+    } else {
+      await createRow({
+        question,
+        a,
+        b,
+        c,
+        d,
+        answer,
+      })
+    }
 
+    setEditingId(null)
     setQuestion("")
     setA("")
     setB("")
@@ -105,6 +124,24 @@ export default function App() {
     setD("")
     setAnswer("")
 
+    load()
+  }
+
+  /* ---------------- EDIT ---------------- */
+  function editRow(r: Row) {
+    setEditingId(r.id || null)
+    setQuestion(r.question || "")
+    setA(r.a || "")
+    setB(r.b || "")
+    setC(r.c || "")
+    setD(r.d || "")
+    setAnswer(r.answer || "")
+  }
+
+  /* ---------------- DELETE ---------------- */
+  async function remove(id?: number) {
+    if (!id) return
+    await deleteRow(id)
     load()
   }
 
@@ -128,7 +165,7 @@ export default function App() {
     <div style={styles.container}>
       <h1 style={styles.title}>Lingualux Quiz</h1>
 
-      {/* MODE SWITCH */}
+      {/* MODE */}
       <div style={{ marginBottom: 20 }}>
         <button
           onClick={() => setMode("quiz")}
@@ -159,20 +196,8 @@ export default function App() {
       <div style={{ marginBottom: 20 }}>
         {!user ? (
           <>
-            <input
-              style={styles.input}
-              placeholder="Email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-
-            <input
-              style={styles.input}
-              type="password"
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
+            <input style={styles.input} placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
+            <input style={styles.input} type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} />
 
             <button onClick={login} style={{ ...styles.button, ...styles.buttonPrimary }}>
               Login
@@ -180,10 +205,7 @@ export default function App() {
           </>
         ) : (
           <>
-            <div style={{ color: "#00ff66", marginBottom: 10 }}>
-              {user.email}
-            </div>
-
+            <div style={{ color: "#00ff66", marginBottom: 10 }}>{user.email}</div>
             <button onClick={logout} style={{ ...styles.button, ...styles.buttonNeutral }}>
               Logout
             </button>
@@ -198,8 +220,8 @@ export default function App() {
 
           {["a", "b", "c", "d"].map((key) => {
             const isSelected = selected === key
-
             let bg = "#1f2937"
+
             if (selected) {
               if (key === current.answer) bg = "#00ff66"
               else if (isSelected) bg = "#ff0033"
@@ -214,8 +236,7 @@ export default function App() {
                   setSelected(key)
 
                   const correct = key === current.answer
-                  const answerText =
-                    current[current.answer as "a" | "b" | "c" | "d"]
+                  const answerText = current[current.answer as "a" | "b" | "c" | "d"]
 
                   if (correct) setScore((s) => s + 1)
 
@@ -260,9 +281,30 @@ export default function App() {
           <input style={styles.input} placeholder="D" value={d} onChange={(e) => setD(e.target.value)} />
           <input style={styles.input} placeholder="Answer" value={answer} onChange={(e) => setAnswer(e.target.value)} />
 
-          <button onClick={add} style={{ ...styles.button, ...styles.buttonPrimary }}>
-            Add
+          <button onClick={save} style={{ ...styles.button, ...styles.buttonPrimary }}>
+            {editingId ? "Update" : "Add"}
           </button>
+
+          <div style={{ marginTop: 20 }}>
+            {rows.map((r) => (
+              <div key={r.id} style={styles.card}>
+                <div style={styles.cardTitle}>{r.question}</div>
+                <div style={styles.cardText}>A: {r.a}</div>
+                <div style={styles.cardText}>B: {r.b}</div>
+                <div style={styles.cardText}>C: {r.c}</div>
+                <div style={styles.cardText}>D: {r.d}</div>
+                <div style={styles.cardAnswer}>Answer: {r.answer}</div>
+
+                <button onClick={() => editRow(r)} style={{ ...styles.button, backgroundColor: "#00ff66", color: "#000" }}>
+                  Edit
+                </button>
+
+                <button onClick={() => remove(r.id)} style={{ ...styles.button, backgroundColor: "#ff0033", color: "#fff" }}>
+                  Delete
+                </button>
+              </div>
+            ))}
+          </div>
         </>
       )}
 
@@ -304,16 +346,17 @@ const styles: any = {
     cursor: "pointer",
     borderRadius: 8,
   },
-  buttonPrimary: {
-    backgroundColor: "#ff6a00",
-    color: "#000",
+  buttonPrimary: { backgroundColor: "#ff6a00", color: "#000" },
+  buttonQuiz: { backgroundColor: "#00ff66", color: "#000" },
+  buttonNeutral: { backgroundColor: "#333", color: "#fff" },
+
+  card: {
+    background: "#111318",
+    padding: 10,
+    marginTop: 10,
+    border: "1px solid #333",
   },
-  buttonQuiz: {
-    backgroundColor: "#00ff66",
-    color: "#000",
-  },
-  buttonNeutral: {
-    backgroundColor: "#333",
-    color: "#fff",
-  },
+  cardTitle: { color: "#00ff66", fontWeight: 900 },
+  cardText: { color: "#ffb000" },
+  cardAnswer: { color: "#ff6a00" },
 }

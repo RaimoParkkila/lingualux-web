@@ -44,3 +44,11 @@ export async function getQuizByIndex(index: number) {
     error: null,
   }
 }
+
+export async function updateRow(id: number, data: any) {
+  return supabase.from("quiz").update(data).eq("id", id)
+}
+
+export async function deleteRow(id: number) {
+  return supabase.from("quiz").delete().eq("id", id)
+}
