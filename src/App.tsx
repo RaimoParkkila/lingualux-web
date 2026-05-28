@@ -14,6 +14,7 @@ type Row = {
 
 export default function App() {
   const [mode, setMode] = useState<"quiz" | "admin">("quiz")
+  type Option = "a" | "b" | "c" | "d"
 
   const [rows, setRows] = useState<Row[]>([])
   const [user, setUser] = useState<any>(null)
@@ -33,6 +34,7 @@ export default function App() {
 
   const [quizIndex, setQuizIndex] = useState(0)
   const [selected, setSelected] = useState<string | null>(null)
+
   const [score, setScore] = useState(0)
 
   const current = rows[quizIndex]
@@ -45,6 +47,10 @@ export default function App() {
       setUser(data.user)
       setLoading(false)
     })
+  }, [])
+
+  useEffect(() => {
+    window.speechSynthesis.getVoices()
   }, [])
 
   /* ---------------- LOAD ---------------- */
@@ -63,7 +69,21 @@ export default function App() {
       if (!window.speechSynthesis) return resolve()
 
       const u = new SpeechSynthesisUtterance(text)
-      u.lang = "es-ES"
+
+      const voices = window.speechSynthesis.getVoices()
+
+      const spanishVoice =
+        voices.find(v => v.lang.includes("es")) ||
+        voices.find(v => v.lang.includes("ES")) ||
+        null
+
+      if (spanishVoice) {
+        u.voice = spanishVoice
+        u.lang = spanishVoice.lang
+      } else {
+        u.lang = "es-ES"
+      }
+
       u.rate = 0.95
       u.onend = () => resolve()
       u.onerror = () => resolve()
@@ -236,7 +256,8 @@ export default function App() {
                   setSelected(key)
 
                   const correct = key === current.answer
-                  const answerText = current[current.answer as "a" | "b" | "c" | "d"]
+                  const answerKey = (current.answer || "a") as "a" | "b" | "c" | "d"
+                  const answerText = current[answerKey]
 
                   if (correct) setScore((s) => s + 1)
 
