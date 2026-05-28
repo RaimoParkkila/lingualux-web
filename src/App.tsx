@@ -135,7 +135,9 @@ export default function App() {
           onClick={() => setMode("quiz")}
           style={{
             ...styles.button,
-            ...(mode === "quiz" ? styles.buttonQuiz : styles.buttonNeutral),
+            ...(mode === "quiz"
+              ? (styles.buttonQuiz as const)
+              : (styles.buttonNeutral as const)),
             marginRight: 10,
           }}
         >
@@ -149,7 +151,9 @@ export default function App() {
           }}
           style={{
             ...styles.button,
-            ...(mode === "admin" ? styles.buttonPrimary : styles.buttonNeutral),
+            ...(mode === "admin"
+              ? (styles.buttonPrimary as const)
+              : (styles.buttonNeutral as const)),
           }}
         >
           Admin
