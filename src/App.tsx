@@ -34,7 +34,6 @@ export default function App() {
   const [score, setScore] = useState(0)
 
   const current = rows[quizIndex]
-
   const isAdmin = user?.email === "raimopa2@gmail.com"
 
   /* ---------------- AUTH ---------------- */
@@ -135,9 +134,7 @@ export default function App() {
           onClick={() => setMode("quiz")}
           style={{
             ...styles.button,
-            ...(mode === "quiz"
-              ? (styles.buttonQuiz as const)
-              : (styles.buttonNeutral as const)),
+            ...(mode === "quiz" ? styles.buttonQuiz : styles.buttonNeutral),
             marginRight: 10,
           }}
         >
@@ -151,9 +148,7 @@ export default function App() {
           }}
           style={{
             ...styles.button,
-            ...(mode === "admin"
-              ? (styles.buttonPrimary as const)
-              : (styles.buttonNeutral as const)),
+            ...(mode === "admin" ? styles.buttonPrimary : styles.buttonNeutral),
           }}
         >
           Admin
@@ -272,16 +267,14 @@ export default function App() {
       )}
 
       {mode === "admin" && !isAdmin && (
-        <div style={{ color: "#fff" }}>
-          No admin access
-        </div>
+        <div style={{ color: "#fff" }}>No admin access</div>
       )}
     </div>
   )
 }
 
 /* ---------------- STYLES ---------------- */
-const styles = {
+const styles: any = {
   container: {
     minHeight: "100vh",
     backgroundColor: "#05060a",
