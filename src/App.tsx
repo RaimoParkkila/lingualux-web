@@ -218,7 +218,7 @@ export default function App() {
         <div style={{ textAlign: "center" }}>
           <h2 style={{ color: "#ff6a00" }}>{current.question}</h2>
 
-          {["a", "b", "c", "d"].map((key) => {
+          {(["a", "b", "c", "d"] as const).map((key) => {
             const isSelected = selected === key
             let bg = "#1f2937"
 
