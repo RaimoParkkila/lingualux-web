@@ -2,6 +2,10 @@ import { useEffect, useState } from "react"
 import { getAllQuiz, createRow, updateRow, deleteRow } from "./services/quiz"
 import { supabase } from "./services/supabase"
 
+/* ---------------- TYPES ---------------- */
+
+type Option = "a" | "b" | "c" | "d"
+
 type Row = {
   id?: number
   question?: string
@@ -9,12 +13,11 @@ type Row = {
   b?: string
   c?: string
   d?: string
-  answer?: string
+  answer?: Option
 }
 
 export default function App() {
   const [mode, setMode] = useState<"quiz" | "admin">("quiz")
-  type Option = "a" | "b" | "c" | "d"
 
   const [rows, setRows] = useState<Row[]>([])
   const [user, setUser] = useState<any>(null)
@@ -28,12 +31,12 @@ export default function App() {
   const [b, setB] = useState("")
   const [c, setC] = useState("")
   const [d, setD] = useState("")
-  const [answer, setAnswer] = useState("")
+  const [answer, setAnswer] = useState<Option | "">("")
 
   const [editingId, setEditingId] = useState<number | null>(null)
 
   const [quizIndex, setQuizIndex] = useState(0)
-  const [selected, setSelected] = useState<string | null>(null)
+  const [selected, setSelected] = useState<Option | null>(null)
 
   const [score, setScore] = useState(0)
 
@@ -42,6 +45,7 @@ export default function App() {
   const isAdmin = user?.email === "raimopa2@gmail.com"
 
   /* ---------------- AUTH ---------------- */
+
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
       setUser(data.user)
@@ -54,6 +58,7 @@ export default function App() {
   }, [])
 
   /* ---------------- LOAD ---------------- */
+
   async function load() {
     const { data } = await getAllQuiz()
     setRows(data || [])
@@ -64,6 +69,7 @@ export default function App() {
   }, [])
 
   /* ---------------- SPEAK ---------------- */
+
   function speak(text: string) {
     return new Promise<void>((resolve) => {
       if (!window.speechSynthesis) return resolve()
@@ -73,8 +79,8 @@ export default function App() {
       const voices = window.speechSynthesis.getVoices()
 
       const spanishVoice =
-        voices.find(v => v.lang.includes("es")) ||
-        voices.find(v => v.lang.includes("ES")) ||
+        voices.find((v) => v.lang.includes("es")) ||
+        voices.find((v) => v.lang.includes("ES")) ||
         null
 
       if (spanishVoice) {
@@ -93,6 +99,7 @@ export default function App() {
   }
 
   /* ---------------- LOGIN ---------------- */
+
   async function login() {
     const { error } = await supabase.auth.signInWithPassword({
       email,
@@ -111,7 +118,8 @@ export default function App() {
     setMode("quiz")
   }
 
-  /* ---------------- SAVE (ADD / EDIT) ---------------- */
+  /* ---------------- SAVE ---------------- */
+
   async function save() {
     if (!isAdmin) return
     if (!question || !a || !b || !c || !d || !answer) return
@@ -148,6 +156,7 @@ export default function App() {
   }
 
   /* ---------------- EDIT ---------------- */
+
   function editRow(r: Row) {
     setEditingId(r.id || null)
     setQuestion(r.question || "")
@@ -159,6 +168,7 @@ export default function App() {
   }
 
   /* ---------------- DELETE ---------------- */
+
   async function remove(id?: number) {
     if (!id) return
     await deleteRow(id)
@@ -172,6 +182,7 @@ export default function App() {
   }
 
   /* ---------------- LOADING ---------------- */
+
   if (loading) {
     return (
       <div style={styles.container}>
@@ -181,6 +192,7 @@ export default function App() {
   }
 
   /* ---------------- UI ---------------- */
+
   return (
     <div style={styles.container}>
       <h1 style={styles.title}>Lingualux Quiz</h1>
@@ -216,8 +228,20 @@ export default function App() {
       <div style={{ marginBottom: 20 }}>
         {!user ? (
           <>
-            <input style={styles.input} placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
-            <input style={styles.input} type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} />
+            <input
+              style={styles.input}
+              placeholder="Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+
+            <input
+              style={styles.input}
+              type="password"
+              placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
 
             <button onClick={login} style={{ ...styles.button, ...styles.buttonPrimary }}>
               Login
@@ -256,7 +280,7 @@ export default function App() {
                   setSelected(key)
 
                   const correct = key === current.answer
-                  const answerKey = (current.answer || "a") as "a" | "b" | "c" | "d"
+                  const answerKey = (current.answer || "a") as Option
                   const answerText = current[answerKey]
 
                   if (correct) setScore((s) => s + 1)
@@ -300,7 +324,7 @@ export default function App() {
           <input style={styles.input} placeholder="B" value={b} onChange={(e) => setB(e.target.value)} />
           <input style={styles.input} placeholder="C" value={c} onChange={(e) => setC(e.target.value)} />
           <input style={styles.input} placeholder="D" value={d} onChange={(e) => setD(e.target.value)} />
-          <input style={styles.input} placeholder="Answer" value={answer} onChange={(e) => setAnswer(e.target.value)} />
+          <input style={styles.input} placeholder="Answer (a/b/c/d)" value={answer} onChange={(e) => setAnswer(e.target.value as Option)} />
 
           <button onClick={save} style={{ ...styles.button, ...styles.buttonPrimary }}>
             {editingId ? "Update" : "Add"}
@@ -337,6 +361,7 @@ export default function App() {
 }
 
 /* ---------------- STYLES ---------------- */
+
 const styles: any = {
   container: {
     minHeight: "100vh",
