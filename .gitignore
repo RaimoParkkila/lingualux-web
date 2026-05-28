@@ -12,6 +12,19 @@ dist
 dist-ssr
 *.local
 
+# Environment variables (TÄRKEÄ)
+.env
+.env.local
+.env.development
+.env.production
+.env.test
+
+# Vite / React env cache (jos joskus syntyy)
+.vite
+
+# Supabase local config (jos käytät myöhemmin CLI:tä)
+.supabase
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
